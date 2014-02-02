@@ -1,75 +1,105 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
 
-#define SIZE 100
-
-#define AUTO
-
-void enDeCrypt(const char *input, char *output, const int **key, const int keyLen)
+struct textStruct
 {
-	int i, j, temp;
-	char *ip, *k;
+		char *text;
+		int len;
+};
 
-	ip = (char *) malloc(sizeof(char) * (strlen(input) + 1));
-	k = (char *) malloc(sizeof(char) * (strlen(key) + 1));
-	strcpy(ip, input);
-	strcpy(k, key);
-	for(i = 0; i < strlen(input); i++)
+void scan(struct textStruct *t)
+{
+	int i = 0;
+	char ch;
+	while((ch = getchar()) != '\n')
 	{
-		if(i < strlen(key))
-			k[]
+		if(!isalpha(ch))
+			continue;
+		ch = tolower(ch);
+		t->text = (char *)realloc(t->text, sizeof(char)*(i+1));
+		t->text[i++] = ch - 97;
 	}
-	while()
-	{
-		for(i = 0; i < keyLen; i++)
-		{
-			temp = 0;
-			for(j = 0 ; j < keyLen; j++)
-				temp += key[i][j] * input[];
-			output[] = temp % 26 + 97;
-		}
-	}
+	t->len = i;
 }
 
-int main()
+void print(struct textStruct *t)
 {
-	int i, j, n, keyLen;
-	char plainText[SIZE], *cipherText, *key;
-	printf("Enter the Plain text: ");
-	fgets(plainText, SIZE, stdin);
-	n = (int) strlen(plainText);
-	plainText[n - 1] = '\0';								//Eliminating the newline char
-	n--;
-
-#ifdef AUTO
-	key = (char *) malloc(sizeof(char) * 10);
-	key[0] = 6  + 97;
-	key[1] = 24 + 97;
-	key[2] = 1  + 97;
-	key[3] = 13 + 97;
-	key[4] = 16 + 97;
-	key[5] = 10 + 97;
-	key[6] = 20 + 97;
-	key[7] = 17 + 97;
-	key[8] = 15 + 97;
-	key[9] = '\0';
-	keyLen = 3;
-#else
-	printf("\nEnter the length of keystring: ");
-	scanf("%d", &keyLen);
-	key = (char *) malloc(sizeof(char) * (keyLen + 1));
-	i = 0;
-	while( i < keyLen)
-		key[i++] = getchar();
-	key[i] = '\0';
-#endif
-	while(n % keyLen)
+	int i = 0;
+	while(i < t->len)
 	{
-		strcat(plainText, "$");
-		n++;
+		putc(t->text[i++] + 97, stdout);
 	}
-	cipherText = (char *) malloc(sizeof(char) * (n + 1));
-	enDeCrypt(plainText, cipherText, key, keyLen);
+	putc('\n', stdout);
+}
 
-	printf("\nCipher text: %s", cipherText);
+void multiply(struct textStruct *input, struct textStruct *key, struct textStruct *output)
+{
+	int i, j, *P, **K, *C, kLen;
+	kLen = sqrt(key->len);
+	P = (int *) malloc(sizeof(int) * input->len);
+	K = (int **) malloc(sizeof(int *) * kLen);
+	for(i = 0; i < kLen; i++)
+	{
+		K[i] = (int *) malloc(sizeof(int) * kLen);
+		if(K[i] == NULL)
+		{
+			printf("Unable to allocate memory!!!\n");
+			return;
+		}
+	}
+	C = (int *) malloc(sizeof(int) * input->len);
+	for(i = 0; i < kLen; i++)
+	{
+		P[i] = input->text[i];
+		for(j = 0; j < kLen; j++)
+		{
+			K[i][j] = key->text[i*kLen + j];
+		}
+	}
+
+	for(i = 0; i < kLen; i++)
+	{
+		C[i] = 0;
+		for(j = 0 ; j < kLen; j++)
+			C[i] += K[i][j] * P[j];
+	}
+	output->text = (char *) malloc(sizeof(char) * input->len);
+	for(i = 0; i < input->len; i++)
+		output->text[i] = C[i] % 26;
+	output->len = input->len;
+}
+
+int main(void)
+{
+	struct textStruct plainText, cipherText, key;
+	plainText.text = key.text = cipherText.text = NULL;
+	printf("Enter the plain text: ");
+	scan(&plainText);
+
+	printf("\nEnter the key: ");
+	scan(&key);
+
+	printf("\n\npt: ");
+	print(&plainText);
+	printf("Key: ");
+	print(&key);
+
+	multiply(&plainText, &key, &cipherText);
+
+	while(1)
+	{
+		printf("\nCipher text: ");
+		print(&cipherText);
+
+		printf("\nEnter the decryption key: ");
+		scan(&key);
+		if(key.len == 0)
+			break;
+		multiply(&cipherText, &key, &plainText);
+		printf("Decrypted Text: ");
+		print(&plainText);
+	}
 	return 0;
 }
